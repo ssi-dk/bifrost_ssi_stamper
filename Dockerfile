@@ -4,7 +4,7 @@ FROM \
 LABEL \
     name="bifrost-ssi_stamper_check" \
     description="Docker environment for ssi_stamper in bifrost" \
-    version="2.0" \
+    version="2.0.5" \
     DBversion="31/07/19" \
     maintainer="kimn@ssi.dk;"
 
