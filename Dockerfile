@@ -1,18 +1,32 @@
-FROM \
-    ssidk/bifrost-base:2.0.5
+FROM ssidk/bifrost-base:2.0.5
+
+ARG version="2.0.5"
+ARG last_updated="31/07/2019"
+ARG name="ssi_stamper"
+ARG full_name="bifrost-${name}"
 
 LABEL \
-    name="bifrost-ssi_stamper_check" \
-    description="Docker environment for ssi_stamper in bifrost" \
-    version="2.0.5" \
-    DBversion="31/07/19" \
+    name=${name} \
+    description="Docker environment for ${full_name}" \
+    version=${version} \
+    resource_version=${last_updated} \
     maintainer="kimn@ssi.dk;"
 
-RUN \
-    cd /bifrost; \
-    git clone https://github.com/ssi-dk/bifrost-ssi_stamper.git ssi_stamper;
+#- Tools to install:start---------------------------------------------------------------------------
+# None
+#- Tools to install:end ----------------------------------------------------------------------------
 
-ENTRYPOINT \
-    [ "/bifrost/whats_my_species/launcher.py"]
-CMD \
-    [ "/bifrost/whats_my_species/launcher.py", "--help"]
+#- Additional resources (files/DBs): start ---------------------------------------------------------
+# None
+#- Additional resources (files/DBs): end -----------------------------------------------------------
+
+#- Source code:start -------------------------------------------------------------------------------
+RUN cd /bifrost && \
+    git clone --branch ${version} https://github.com/ssi-dk/${full_name}.git ${name};
+#- Source code:end ---------------------------------------------------------------------------------
+
+#- Set up entry point:start ------------------------------------------------------------------------
+ENV PATH /bifrost/${name}/:$PATH
+ENTRYPOINT ["launcher.py"]
+CMD ["launcher.py", "--help"]
+#- Set up entry point:end --------------------------------------------------------------------------
