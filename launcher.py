@@ -6,6 +6,7 @@ import argparse
 import json
 import subprocess
 import os
+import traceback
 from bifrostlib import datahandling
 
 COMPONENT: dict = datahandling.load_yaml(os.path.join(os.path.dirname(__file__), 'config.yaml'))
@@ -115,13 +116,20 @@ def run_sample(args: object):
         print(f"Error with component_id")
     else:
         print(f"snakemake -s /bifrost/{COMPONENT['name']}/pipeline.smk --config sample_id={str(sample[0]['_id'])} component_id={str(component[0]['_id'])}")
-        process: (str, str) = subprocess.Popen(
-            f"snakemake -s /bifrost/{COMPONENT['name']}/pipeline.smk --config sample_id={str(sample[0]['_id'])} component_id={str(component[0]['_id'])}",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=True
-        ).communicate()
-        print(process[0], process(1))
+        try:
+            process: subprocess.Popen = subprocess.Popen(
+                f"snakemake -s /bifrost/{COMPONENT['name']}/pipeline.smk --config sample_id={str(sample[0]['_id'])} component_id={str(component[0]['_id'])}",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True
+            )
+            output_streams: (str, str) = process.communicate()
+            if process.poll() != 0:
+                print("Error in running component, please see logs")
+            else:
+                print(output_streams)
+        except:
+            print(traceback.format_exc())
 
 
 if __name__ == '__main__':
