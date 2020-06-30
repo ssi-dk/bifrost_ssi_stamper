@@ -1,6 +1,6 @@
-FROM ssidk/bifrost-base:2.0.5
+FROM ssidk/bifrost-base:2.0.6
 
-ARG version="2.0.5"
+ARG version="2.0.6"
 ARG last_updated="31/07/2019"
 ARG name="ssi_stamper"
 ARG full_name="bifrost-${name}"
