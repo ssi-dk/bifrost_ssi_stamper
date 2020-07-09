@@ -61,7 +61,7 @@ options:
     "Neisseria gonorrhoeae": {"name": "Neisseria gonorrhoeae", "min_length": 1980000, "max_length": 2180000}
     "Neisseria meningitidis": {"name": "Neisseria meningitidis", "min_length": 1920000, "max_length": 2170000}
     "Pseudomonas aeruginosa": {"name": "Pseudomonas aeruginosa", "min_length": 6100000, "max_length": 7000000}
-    "Salmonella enterica": {"name": "Salmonella enterica", "min_length": 4510000, "max_length": 5060000}
+    "Salmonella enterica": {"name": "Salmonella enterica", "min_length": 4510000, "max_length": 5300000}
     "Shigella sonnei": {"name": "Shigella sonnei", "min_length": 4570000, "max_length": 4930000}
     "Staphylococcus aureus": {"name": "Staphylococcus aureus", "min_length": 2630000, "max_length": 2910000}
     "Staphylococcus capitis": {"name": "Staphylococcus capitis", "min_length": 2310000, "max_length": 2640000}
