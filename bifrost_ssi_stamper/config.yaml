@@ -1,23 +1,29 @@
 #-Basic info----------------------------------------------------------------------------------------
-name: ssi_stamper
-version: 2.0.7
+display_name: ssi_stamper
+name: &name ssi_stamper__unspecified__unspecified
+version:
+  schema: 2.0
+  code: unspecified
+  resource: unspecified
 #---------------------------------------------------------------------------------------------------
 
 #-Details-------------------------------------------------------------------------------------------
 details:
-  category: stamper
-  schema_version: 2.0
   target: sample
-  type: stamper
-  recommendation: required
   description: >
     This runs against the mondoDB database and certifies a sample that has run assemblatron and 
     whats_my_species on it's QC preformance (Core Facility/Supplying Lab/Ok). This can also be run
     as a script without output on the server (only bifrost DB)
 #---------------------------------------------------------------------------------------------------
 
-#-Docker location-----------------------------------------------------------------------------------
-dockerfile: &dockerfile "docker://ssidk/bifrost-ssi_stamper:2.0.7"
+#-Category info-------------------------------------------------------------------------------------
+category: [stamper]
+#---------------------------------------------------------------------------------------------------
+
+#-Install-------------------------------------------------------------------------------------------
+install:
+  path: # Set by install program
+  dockerfile: docker://ssidk/bifrost_ssi_stamper:unspecified__unspecified
 #---------------------------------------------------------------------------------------------------
 
 #-Options-------------------------------------------------------------------------------------------
@@ -72,11 +78,13 @@ options:
     "Staphylococcus simulans": {"name": "Staphylococcus simulans", "min_length": 2540000, "max_length": 2890000}
     "Staphylococcus xylosus": {"name": "Staphylococcus xylosus", "min_length": 5190000, "max_length": 7110000}
     "Streptococcus agalactiae": {"name": "Streptococcus agalactiae", "min_length": 1930000, "max_length": 2280000}
+    "Streptococcus dysgalactiae": {"name": "Streptococcus dysgalactiae", "min_length": 1880000, "max_length": 2380000}
     "Streptococcus equi": {"name": "Streptococcus equi", "min_length": 1910000, "max_length": 2270000}
     "Streptococcus pneumoniae": {"name": "Streptococcus pneumoniae", "min_length": 1850000, "max_length": 2230000}
     "Streptococcus pseudopneumoniae": {"name": "Streptococcus pseudopneumoniae", "min_length": 1940000, "max_length": 2250000}
     "Streptococcus pyogenes": {"name": "Streptococcus pyogenes", "min_length": 1660000, "max_length": 1940000}
     "Streptococcus uberis": {"name": "Streptococcus uberis", "min_length": 1600000, "max_length": 1960000}
+    "Taylorella equigenitalis": {"name": "Taylorella equigenitalis", "min_length": 1620000, "max_length": 1740000}
     "Vibrio cholerae": {"name": "Vibrio cholerae", "min_length": 3780000, "max_length": 4140000}
     "Vibrio vulnificus": {"name": "Vibrio vulnificus", "min_length": 4900000, "max_length": 5260000}
     "Yersinia aleksiciae": {"name": "Yersinia aleksiciae", "min_length": 4170000, "max_length": 4890000}
@@ -111,7 +119,7 @@ db_values_changes:
     report:
       stamper:
         title: "SSI QC Stamp"
-        info: *dockerfile
+        info: *name
         columns:
           - {id: "test", name: "test"}
         data: []

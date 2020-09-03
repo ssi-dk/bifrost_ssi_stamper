@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  python:
+    build:
+      context: .
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - .secrets/mongodb_dev_key.env
+  python-tests:
+    build:
+      context: .
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - .secrets/mongodb_dev_key.env
+    working_dir: /bifrost_ssi_stamper/
+    volumes:
+      - ./bifrost_ssi_stamper:/bifrost_ssi_stamper/bifrost_ssi_stamper
+      - ./tests:/bifrost_ssi_stamper/tests
+      - ../../lib/bifrostlib:/bifrostlib
+      # - ../bifrost_run_launcher/bifrost_run_launcher:/bifrost_run_launcher/bifrost_run_launcher
+    entrypoint: watchmedo auto-restart --recursive --pattern="*.py" --directory="/bifrost_ssi_stamper" -- pytest --verbose --ignore=resources
+    depends_on:
+      - python
