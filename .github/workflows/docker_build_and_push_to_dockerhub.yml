@@ -3,7 +3,6 @@ on:
   push:
   release:
     types: [created]
-    types: [created]
 
 jobs:
     build-n-publish:
