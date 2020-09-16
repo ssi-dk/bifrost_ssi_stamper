@@ -58,6 +58,6 @@ RUN \
 #- Additional resources (files/DBs): end -----------------------------------------------------------
 
 #- Set up entry point:start ------------------------------------------------------------------------
-ENTRYPOINT ["python3", "-m", "bifrost_cge_resfinder"]
-CMD ["python3", "-m", "bifrost_cge_resfinder", "--help"]
+ENTRYPOINT ["python3", "-m", "bifrost_ssi_stamper"]
+CMD ["python3", "-m", "bifrost_ssi_stamper", "--help"]
 #- Set up entry point:end --------------------------------------------------------------------------
