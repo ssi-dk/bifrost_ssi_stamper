@@ -9,5 +9,5 @@ watchdog
 # If you want to edit bifrostlib for development you have to mount the volume to the docker 
 # container and "pip install -e bifrostlib" from there. I attempted to do it via docker but you 
 # can't access volumes at build-time. It doesn't matter for the main package as it's the reference
-bifrostlib==2.0.12
+bifrostlib==2.0.13
 -e /bifrost_ssi_stamper/
