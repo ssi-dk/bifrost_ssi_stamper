@@ -1,2 +1,2 @@
-bifrostlib==2.0.11
+bifrostlib==2.0.12
 /bifrost_ssi_stamper/
