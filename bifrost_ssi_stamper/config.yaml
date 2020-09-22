@@ -1,10 +1,10 @@
 #-Basic info----------------------------------------------------------------------------------------
 display_name: ssi_stamper
-name: &name ssi_stamper__unspecified__unspecified
+name: &name ssi_stamper__2.1.0__NA
 version:
   schema: 2.0
-  code: unspecified
-  resource: unspecified
+  code: 2.1.0
+  resource: NA
 #---------------------------------------------------------------------------------------------------
 
 #-Details-------------------------------------------------------------------------------------------
@@ -23,7 +23,7 @@ category: [stamper]
 #-Install-------------------------------------------------------------------------------------------
 install:
   path: # Set by install program
-  dockerfile: docker://ssidk/bifrost_ssi_stamper:unspecified__unspecified
+  dockerfile: docker://ssidk/bifrost_ssi_stamper
 #---------------------------------------------------------------------------------------------------
 
 #-Options-------------------------------------------------------------------------------------------
