@@ -270,6 +270,7 @@ def datadump(samplecomponent_ref_json: Dict):
     generate_report(stamper)
     samplecomponent.set_category(stamper)
     sample.set_category(stamper)
+    samplecomponent.save_files()
     common.set_status_and_save(sample, samplecomponent, "Success")
     with open(os.path.join(samplecomponent["component"]["name"], "datadump_complete"), "w+") as fh:
         fh.write("done")
