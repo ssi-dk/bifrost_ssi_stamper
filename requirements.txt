@@ -1,2 +1,7 @@
-bifrostlib==2.0.13
-/bifrost_ssi_stamper/
+pytest
+pytest-cov
+pytest-profiling
+coverage
+pyyaml
+argh
+watchdog

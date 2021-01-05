@@ -45,13 +45,13 @@ def test_install_component(mydb):
 
 def test_setup_of_data(mydb):
     test_install_component(mydb)
-    if not (os.path.isfile("/bifrost_test_data/read_data/S1_R1.fastq.gz") and os.path.isfile("/bifrost_test_data/read_data/S1_R2.fastq.gz")):
+    if not (os.path.isfile("/bifrost_test_data/samples/S1_R1.fastq.gz") and os.path.isfile("/bifrost_test_data/samples/S1_R2.fastq.gz")):
         process = subprocess.Popen(
                 "bash download_S1.sh",
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 shell=True,
-                cwd="/bifrost_test_data/read_data/")
+                cwd="/bifrost_test_data/samples/")
         process_out, process_err = process.communicate()
     if os.path.isdir("/bifrost_test_data/output/setup"):
         shutil.rmtree("/bifrost_test_data/output/setup")
@@ -61,7 +61,7 @@ def test_setup_of_data(mydb):
         "-per", "/bifrost_test_data/per_sample.sh",
         "-post", "/bifrost_test_data/post.sh",
         "-meta", "/bifrost_test_data/run_metadata.tsv",
-        "-reads", "/bifrost_test_data/read_data",
+        "-reads", "/bifrost_test_data/samples",
         "-name", "test_run",
         "-type", "test",
         "-out", "/bifrost_test_data/output/setup"
