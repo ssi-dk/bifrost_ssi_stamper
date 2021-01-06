@@ -1,15 +1,17 @@
 # This is intended to run in Local Development (dev) and Github Actions (test/prod)
 # BUILD_ENV options (dev, test, prod) dev for local testing and test for github actions testing on prod ready code
 ARG BUILD_ENV="prod"
-ARG MAINTAINER="kimn@ssi.dk;"
 ARG BIFROST_COMPONENT_NAME="bifrost_ssi_stamper"
+ARG MAINTAINER="kimn@ssi.dk;"
 ARG FORCE_DOWNLOAD=true
 
 #---------------------------------------------------------------------------------------------------
 # Programs for all environments
 #---------------------------------------------------------------------------------------------------
 FROM continuumio/miniconda3:4.8.2 as build_base
+ARG BUILD_ENV
 ARG BIFROST_COMPONENT_NAME
+ARG MAINTAINER
 ARG FORCE_DOWNLOAD
 LABEL \
     BIFROST_COMPONENT_NAME=${BIFROST_COMPONENT_NAME} \
@@ -50,6 +52,7 @@ RUN \
 #---------------------------------------------------------------------------------------------------
 FROM continuumio/miniconda3:4.8.2 as build_test
 ARG BIFROST_COMPONENT_NAME
+ARG BUILD_ENV
 COPY --from=build_base / /
 WORKDIR /bifrost/components/${BIFROST_COMPONENT_NAME}
 COPY ./ ./

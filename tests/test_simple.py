@@ -9,7 +9,7 @@ from bifrostlib.datahandling import SampleReference
 from bifrostlib.datahandling import Sample
 from bifrostlib.datahandling import RunReference
 from bifrostlib.datahandling import Run
-from bifrost_min_read_check import launcher
+from bifrost_ssi_stamper import launcher
 import pymongo
 import os
 import shutil
@@ -22,7 +22,7 @@ def test_connection():
 
 class TestBifrostMinReadCheck:
     current_dir = os.getcwd()
-    test_dir = "/bifrost/test_data/output/test__min_read_check/"
+    test_dir = "/bifrost/test_data/output/test__ssi_stamper/"
     json_entries = [
         {
             "_id": {"$oid": "000000000000000000000001"}, 
@@ -54,7 +54,7 @@ class TestBifrostMinReadCheck:
     def teardown_class(cls):
         client = pymongo.MongoClient(os.environ['BIFROST_DB_KEY'])
         db = client.get_database()
-        cls.clear_all_collections(db)
+        # cls.clear_all_collections(db)
 
     @staticmethod
     def clear_all_collections(db):

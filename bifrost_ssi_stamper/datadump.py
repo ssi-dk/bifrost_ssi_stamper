@@ -18,7 +18,7 @@ def has_reads_files(stamper, sample):
         test["reason"] = "paired_reads category not set"
     else:
         test["status"] = "pass"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def has_min_reads(stamper, sample):
     size_check = sample.get_category("size_check")
@@ -33,7 +33,7 @@ def has_min_reads(stamper, sample):
             test["reason"] = "Less than min reads"
         else:
             test["status"] = "pass"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def main_species_level_ok(stamper, sample, component):
     species_detection = sample.get_category("species_detection")
@@ -48,7 +48,7 @@ def main_species_level_ok(stamper, sample, component):
             test["reason"] = f"Value {round(test['value'],2)} is below threshold ({component['options']['min_species']})"
         else:
             test["status"] = "pass"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def unclassified_level_ok(stamper, sample, component):
     species_detection = sample.get_category("species_detection")
@@ -63,7 +63,7 @@ def unclassified_level_ok(stamper, sample, component):
             test["reason"] = f"Value {round(test['value'],2)} is below threshold ({component['options']['max_unclassified']})"
         else:
             test["status"] = "pass"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def species_in_db(stamper, sample, component):
     species_detection = sample.get_category("species_detection")
@@ -78,7 +78,7 @@ def species_in_db(stamper, sample, component):
             test["reason"] = f"Detected species ({test['value']}) not in bifrost db. Can't estimate proper QC values."
         else:
             test["status"] = "pass"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def species_provided_is_detected(stamper, sample):
     species_detection = sample.get_category("species_detection")
@@ -96,7 +96,7 @@ def species_provided_is_detected(stamper, sample):
             test["reason"] = f"Detected species ({species_detection['summary'].get('species', None)} different than expected ({test['value']}))"
         else:
             test["status"] = "pass"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def genome_size_at_x1_ok(stamper, sample, component):
     denovo_assembly = sample.get_category("denovo_assembly")
@@ -119,7 +119,7 @@ def genome_size_at_x1_ok(stamper, sample, component):
         else:
             test['status'] = 'fail'
             test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['min_length']})"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def genome_size_at_x10_ok(stamper, sample, component):
     mapping_qc = sample.get_category("mapping_qc")
@@ -142,7 +142,7 @@ def genome_size_at_x10_ok(stamper, sample, component):
         else:
             test['status'] = 'fail'
             test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['min_length']})"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def genome_size_difference_x1_x10_ok(stamper, sample, component):
     denovo_assembly = sample.get_category("denovo_assembly")
@@ -161,7 +161,7 @@ def genome_size_difference_x1_x10_ok(stamper, sample, component):
         else:
             test["status"] = "fail"
             test["reason"] = f"Value ({test['value']}) above expected ({component['options']['max_size_difference_for_x1_and_x10']})"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def genome_average_depth_ok(stamper, sample, component):
     denovo_assembly = sample.get_category("denovo_assembly")
@@ -188,7 +188,7 @@ def genome_average_depth_ok(stamper, sample, component):
             test["reason"] = f"Low reads ({test['value']} < {component['options']['average_coverage_warn']})"
         else:
             test["status"] = "pass"
-    stamper["summary"]["tests"].append(test)
+    stamper["summary"]["tests"].append(test.json)
 
 def evaluate_tests_and_stamp(stamper, sample):
     core_facility = False
@@ -213,9 +213,10 @@ def evaluate_tests_and_stamp(stamper, sample):
             checks[3] = True
     
     species_detection = sample.get_category("species_detection")
-    if species_detection["summary"]["species"] == species_detection["summary"]["detected_species"]:
-        if all(checks) == True:
-            core_facility = True
+    if species_detection is not None:
+        if species_detection["summary"]["species"] == species_detection["summary"]["detected_species"]:
+            if all(checks) == True:
+                core_facility = True
 
     action = "OK"
     status = "pass"
@@ -230,15 +231,14 @@ def evaluate_tests_and_stamp(stamper, sample):
         "name": "ssi_stamper",
         "status": status,
         "value": action,
-        "date": datetime.datetime.utcnow(),
+        "date": common.date_now(),
         "reason": ""
     }
 
 def generate_report(stamper):
     data = []
     for test in stamper['summary']['tests']:
-        current_test = Test(_value=test)
-        data.append({"test": f"{current_test['display_name']}: {current_test['status']}: {current_test['value']}: {current_test['reason']}"})
+        data.append({"test": f"{test.get('display_name','')}: {test.get('status','')}: {test.get('value','')}: {test.get('reason','')}"})
 
     stamper['report']['columns']['items'] = {"id": "test", "name": "test"}
     stamper['report']['data'] = data
@@ -254,9 +254,9 @@ def datadump(samplecomponent_ref_json: Dict):
             "name": "stamper",
             "component": {"id": samplecomponent["component"]["_id"], "name": samplecomponent["component"]["name"]},
             "summary": { "tests": [] },
-            "report": {}
+            "report": { "columns": {}, "data": {}}
         })
-    has_reads_files(stamper, sample, component, samplecomponent)
+    has_reads_files(stamper, sample)
     has_min_reads(stamper, sample)
     main_species_level_ok(stamper, sample, component)
     unclassified_level_ok(stamper, sample, component)
@@ -266,7 +266,7 @@ def datadump(samplecomponent_ref_json: Dict):
     genome_size_at_x10_ok(stamper, sample, component)
     genome_size_difference_x1_x10_ok(stamper, sample, component)
     genome_average_depth_ok(stamper, sample, component)
-    evaluate_tests_and_stamp(stamper)
+    evaluate_tests_and_stamp(stamper, sample)
     generate_report(stamper)
     samplecomponent.set_category(stamper)
     sample.set_category(stamper)
