@@ -1,15 +1,14 @@
 #-Basic info----------------------------------------------------------------------------------------
 display_name: ssi_stamper
-name: &name ssi_stamper__2.1.0__NA
+name: &name ssi_stamper__v2_2_1
 version:
-  schema: 2.0
-  code: 2.1.0
-  resource: NA
+  schema: ["v2_1_0"]
+  code: "v2_2_1"
 #---------------------------------------------------------------------------------------------------
 
 #-Details-------------------------------------------------------------------------------------------
 details:
-  target: sample
+  target: [sample]
   description: >
     This runs against the mondoDB database and certifies a sample that has run assemblatron and 
     whats_my_species on it's QC preformance (Core Facility/Supplying Lab/Ok). This can also be run
@@ -35,7 +34,7 @@ options:
   "average_coverage_low": 25
   "average_coverage_warn": 50
   "number_of_reads_fail": 10000
-  "max_size_difference_for_1x_and_10x": 250000
+  "max_size_difference_for_x1_and_x10": 250000
   species_qc_value_mapping:
     "default": {"name": "default", "min_length": 1000000, "max_length": 15000000}
     "Acinetobacter baumannii": {"name": "Acinetobacter baumannii", "min_length": 3620000, "max_length": 4160000}
@@ -97,13 +96,6 @@ resources:
 
 #-Requirements to run component---------------------------------------------------------------------
 requirements:
-  component:
-    min_read_check:
-      status: Success
-    assemblatron:
-      status: [Success, Failure]
-    whats_my_species:
-      status: [Success, Failure]
 #---------------------------------------------------------------------------------------------------
 
 #-DB Value changes (excluding component output)-----------------------------------------------------

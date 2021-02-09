@@ -1,230 +1,223 @@
-import sys
+from bifrostlib import common
+from bifrostlib.datahandling import Sample
+from bifrostlib.datahandling import Component
+from bifrostlib.datahandling import SampleComponentReference
+from bifrostlib.datahandling import SampleComponent
+from bifrostlib.datahandling import Category
+from bifrostlib.datahandling import Test
+from typing import Dict
+import os
 import datetime
-from bifrostlib import datahandling
 
-def test__sample__has_reads_files(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        test = datahandling.stamperTestObj(this_function_name, "No reads", "core facility")
-        if sampleComponentObj.get_reads() == ("", ""):
-            test.set_status_and_reason("fail", "Read path is empty")
+
+def has_reads_files(stamper, sample):
+    paired_reads = sample.get_category("paired_reads")
+    test = Test(name="has_reads_files", display_name="No reads", effect="core facility", status="undefined")
+    if paired_reads is None:
+        test["status"] = "fail"
+        test["reason"] = "paired_reads category not set"
+    else:
+        test["status"] = "pass"
+    stamper["summary"]["tests"].append(test.json)
+
+def has_min_reads(stamper, sample):
+    size_check = sample.get_category("size_check")
+    test = Test(name="has_min_reads", display_name="Less than min reads", effect="core facility", status="undefined")
+    if size_check is None:
+        test["status"] = "fail"
+        test["reason"] = "size_check category not set"
+    else:
+        test["value"] = size_check["summary"].get("has_min_num_of_reads", False)
+        if test['value'] != True:
+            test["status"] = "fail"
+            test["reason"] = "Less than min reads"
         else:
-            test.set_status_and_reason("pass", "")
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
+            test["status"] = "pass"
+    stamper["summary"]["tests"].append(test.json)
 
-
-def test__size_check__has_min_reads(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        size_check = sampleComponentObj.get_sample_properties_by_category("size_check")
-        test = datahandling.stamperTestObj(this_function_name, "Less than min reads", "core facility")
-        test.set_value(size_check["has_min_num_of_reads"])
-        if test.get_value() == False:
-            test.set_status_and_reason("fail", "Less than min reads")
+def main_species_level_ok(stamper, sample, component):
+    species_detection = sample.get_category("species_detection")
+    test = Test(name="main_species_level_ok", display_name="Multiple species detected", effect="supplying lab", status="undefined")
+    if species_detection is None:
+        test["status"] = "fail"
+        test["reason"] = "species_detection category not set"
+    else:
+        test["value"] = species_detection["summary"].get("percent_classified_species_1", 0) + species_detection["summary"].get("percent_unclassified", 0)
+        if test["value"] < component["options"]["min_species"]:
+            test["status"] = "fail"
+            test["reason"] = f"Value {round(test['value'],2)} is below threshold ({component['options']['min_species']})"
         else:
-            test.set_status_and_reason("pass", "")
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
+            test["status"] = "pass"
+    stamper["summary"]["tests"].append(test.json)
 
-
-def test__species_detection__main_species_level(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        test = datahandling.stamperTestObj(this_function_name, "Multiple species detected", "supplying lab")
-        options = sampleComponentObj.get_options()
-        species_detection = sampleComponentObj.get_sample_properties_by_category("species_detection")
-        test.set_value(species_detection["percent_classified_species_1"] + species_detection["percent_unclassified"])
-        if test.get_value() < options["min_species"]:
-            test.set_status_and_reason("fail", "Value ({}) is below threshold ({})".format(test.get_value(), options["min_species"]))
+def unclassified_level_ok(stamper, sample, component):
+    species_detection = sample.get_category("species_detection")
+    test = Test(name="unclassified_level_ok", display_name="High unclassified", effect="supplying lab", status="undefined")
+    if species_detection is None:
+        test["status"] = "fail"
+        test["reason"] = "species_detection category not set"
+    else:
+        test["value"] = species_detection["summary"].get("percent_unclassified", 0)
+        if test["value"] >= component["options"]["max_unclassified"]:
+            test["status"] = "fail"
+            test["reason"] = f"Value {round(test['value'],2)} is below threshold ({component['options']['max_unclassified']})"
         else:
-            test.set_status_and_reason("pass", "")
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
+            test["status"] = "pass"
+    stamper["summary"]["tests"].append(test.json)
 
-
-def test__species_detection__unclassified_level(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        test = datahandling.stamperTestObj(this_function_name, "High unclassified", "supplying lab")
-        options = sampleComponentObj.get_options()
-        species_detection = sampleComponentObj.get_sample_properties_by_category("species_detection")
-        test.set_value(species_detection["percent_unclassified"])
-        if test.get_value() >= options["max_unclassified"]:
-            test.set_status_and_reason("fail", "Value ({}) is above threshold ({})".format(test.get_value(), options["max_unclassified"]))
+def species_in_db(stamper, sample, component):
+    species_detection = sample.get_category("species_detection")
+    test = Test(name="species_in_db", display_name="No species submitted - using default values", effect="supplying lab", status="undefined")
+    if species_detection is None:
+        test["status"] = "fail"
+        test["reason"] = "species_detection category not set"
+    else:
+        test["value"] = species_detection["summary"].get("species", None)
+        if test["value"] not in component["options"]["species_qc_value_mapping"]:
+            test["status"] = "fail"
+            test["reason"] = f"Detected species ({test['value']}) not in bifrost db. Can't estimate proper QC values."
         else:
-            test.set_status_and_reason("pass", "")
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
+            test["status"] = "pass"
+    stamper["summary"]["tests"].append(test.json)
 
-
-def test__component__species_in_db(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        test = datahandling.stamperTestObj(this_function_name, "No species submitted - using default values", "supplying lab")
-        options = sampleComponentObj.get_options()
-        species_detection = sampleComponentObj.get_sample_properties_by_category("species_detection")
-        test.set_value(species_detection["species"])
-        if test.get_value() not in options["species_qc_value_mapping"]:
-            test.set_status_and_reason("fail", "Detected species not in bifrost db. Can't estimate proper QC values.")
+def species_provided_is_detected(stamper, sample):
+    species_detection = sample.get_category("species_detection")
+    test = Test(name="species_provided_is_detected", display_name="Detected species mismatch", effect="supplying lab", status="undefined")
+    if species_detection is None:
+        test["status"] = "fail"
+        test["reason"] = "species_detection category not set"
+    else:
+        test["value"] = species_detection["summary"].get("species", None)
+        if test["value"] is None:
+            test["status"] = "pass"
+            test["reason"] = "No submitted species"
+        elif test["value"] != species_detection["summary"].get("detected_species", None):
+            test["status"] = "fail"
+            test["reason"] = f"Detected species ({species_detection['summary'].get('species', None)} different than expected ({test['value']}))"
         else:
-            test.set_status_and_reason("pass", "")
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
+            test["status"] = "pass"
+    stamper["summary"]["tests"].append(test.json)
 
-
-def test__sample__species_provided_is_detected(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        test = datahandling.stamperTestObj(this_function_name, "Detected species mismatch", "supplying lab")
-        options = sampleComponentObj.get_options()
-        species_detection = sampleComponentObj.get_sample_properties_by_category("species_detection")
-        sample_info = sampleComponentObj.get_sample_properties_by_category("sample_info")
-        test.set_value(sample_info.get("provided_species", None))
-        if test.get_value() is None:
-            test.set_status_and_reason("pass", "No submitted species")
-        elif test.get_value() not in options["species_qc_value_mapping"]:
-            test.set_status_and_reason("pass", "Submitted species not in db")
-        elif species_detection["species"] != test.get_value():
-            test.set_status_and_reason("fail", "Detected species ({}) different than expected ({})".format(species_detection["species"], test.get_value()))
-        else:
-            test.set_status_and_reason("pass", "")
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
-
-
-def test__denovo_assembly__genome_size_at_1x(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        test = datahandling.stamperTestObj(this_function_name, "Atypical genome size (1x)", "supplying lab")
-        options = sampleComponentObj.get_options()
-        denovo_assembly = sampleComponentObj.get_sample_properties_by_category("denovo_assembly")
-        species_detection = sampleComponentObj.get_sample_properties_by_category("species_detection")
-        test.set_value(denovo_assembly["bin_length_at_1x"])
-        species = species_detection["species"]
-        if species not in options["species_qc_value_mapping"]:
+def genome_size_at_x1_ok(stamper, sample, component):
+    denovo_assembly = sample.get_category("denovo_assembly")
+    species_detection = sample.get_category("species_detection")
+    test = Test(name="genome_size_at_x1_ok", display_name="Atypical genome size (x1)", effect="supplying lab", status="undefined")
+    if denovo_assembly is None:
+        test["status"] = "fail"
+        test["reason"] = "denovo_assembly category not set"
+    elif species_detection is None:
+        test["status"] = "fail"
+        test["reason"] = "species_detection category not set"
+    else:
+        test["value"] = denovo_assembly["summary"].get('length', 0)
+        species = species_detection["summary"].get("species", None)
+        if species not in component["options"]["species_qc_value_mapping"]:
             species = "default"
-        if options["species_qc_value_mapping"][species]["min_length"] < test.get_value() < options["species_qc_value_mapping"][species]["max_length"]:
-            test.set_status_and_reason("pass", "")
+        if (test['value'] > component["options"]["species_qc_value_mapping"][species]["min_length"] and 
+            test['value'] < component["options"]["species_qc_value_mapping"][species]["max_length"]):
+            test['status'] = "pass"
         else:
-            test.set_status_and_reason("fail", "Value ({}) below or above expected ({}, {})".format(test.get_value(), options["species_qc_value_mapping"][species]["min_length"], options["species_qc_value_mapping"][species]["max_length"]))
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
+            test['status'] = 'fail'
+            test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['min_length']})"
+    stamper["summary"]["tests"].append(test.json)
 
-
-def test__denovo_assembly__genome_size_at_10x(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        test = datahandling.stamperTestObj(this_function_name, "Atypical genome size (10x)", "supplying lab")
-        options = sampleComponentObj.get_options()
-        denovo_assembly = sampleComponentObj.get_sample_properties_by_category("denovo_assembly")
-        species_detection = sampleComponentObj.get_sample_properties_by_category("species_detection")
-        test.set_value(denovo_assembly["bin_length_at_10x"])
-        species = species_detection["species"]
-        if species not in options["species_qc_value_mapping"]:
+def genome_size_at_x10_ok(stamper, sample, component):
+    mapping_qc = sample.get_category("mapping_qc")
+    species_detection = sample.get_category("species_detection")
+    test = Test(name="genome_size_at_x10_ok", display_name="Atypical genome size (x10)", effect="supplying lab", status="undefined")
+    if mapping_qc is None:
+        test["status"] = "fail"
+        test["reason"] = "mapping_qc category not set"
+    elif species_detection is None:
+        test["status"] = "fail"
+        test["reason"] = "species_detection category not set"
+    else:
+        test["value"] = mapping_qc["summary"].get('values_at_floor_of_depth', 0).get('x10', 0).get('length', 0)
+        species = species_detection["summary"].get("species", None)
+        if species not in component["options"]["species_qc_value_mapping"]:
             species = "default"
-        if options["species_qc_value_mapping"][species]["min_length"] < test.get_value() < options["species_qc_value_mapping"][species]["max_length"]:
-            test.set_status_and_reason("pass", "")
+        if (test['value'] > component["options"]["species_qc_value_mapping"][species]["min_length"] and
+                test['value'] < component["options"]["species_qc_value_mapping"][species]["max_length"]):
+            test['status'] = "pass"
         else:
-            test.set_status_and_reason("fail", "Value ({}) below or above expected ({}, {})".format(test.get_value(), options["species_qc_value_mapping"][species]["min_length"], options["species_qc_value_mapping"][species]["max_length"]))
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
+            test['status'] = 'fail'
+            test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['min_length']})"
+    stamper["summary"]["tests"].append(test.json)
 
-
-def test__denovo_assembly__genome_size_difference_1x_10x(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        test = datahandling.stamperTestObj(this_function_name, "Atypical genome size difference (1x - 10x)", "supplying lab")
-        options = sampleComponentObj.get_options()
-        denovo_assembly = sampleComponentObj.get_sample_properties_by_category("denovo_assembly")
-        test.set_value(denovo_assembly["bin_contigs_at_1x"] - denovo_assembly["bin_contigs_at_10x"])
-        if test.get_value() < options["max_size_difference_for_1x_and_10x"]:
-            test.set_status_and_reason("pass", "")
+def genome_size_difference_x1_x10_ok(stamper, sample, component):
+    denovo_assembly = sample.get_category("denovo_assembly")
+    mapping_qc = sample.get_category("mapping_qc")
+    test = Test(name="genome_size_difference_x1_x10_ok", display_name="Atypical genome size (x1 - x10)", effect="supplying lab", status="undefined")
+    if denovo_assembly is None:
+        test["status"] = "fail"
+        test["reason"] = "denovo_assembly category not set"
+    elif mapping_qc is None:
+        test["status"] = "fail"
+        test["reason"] = "mapping_qc category not set"
+    else:
+        test["value"] = denovo_assembly["summary"].get('length', 0) - mapping_qc["summary"].get('values_at_floor_of_depth', 0).get('x10', 0).get('length', 0)
+        if test["value"] < component["options"]["max_size_difference_for_x1_and_x10"]:
+            test["status"] = "pass"
         else:
-            test.set_status_and_reason("fail", "Value ({}) above expected ({})".format(test.get_value(), options["max_size_difference_for_1x_and_10x"]))
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
+            test["status"] = "fail"
+            test["reason"] = f"Value ({test['value']}) above expected ({component['options']['max_size_difference_for_x1_and_x10']})"
+    stamper["summary"]["tests"].append(test.json)
 
-
-def test__denovo_assembly__genome_average_coverage(sampleComponentObj):
-    try:
-        this_function_name = sys._getframe().f_code.co_name
-        summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-        test = datahandling.stamperTestObj(this_function_name, "Atypical genome coverage", "supplying lab")
-        options = sampleComponentObj.get_options()
-        denovo_assembly = sampleComponentObj.get_sample_properties_by_category("denovo_assembly")
-        test.set_value(denovo_assembly["bin_coverage_at_1x"])
-        if test.get_value() < options["average_coverage_fail"]:
-            test.set_status_and_reason("fail", "Lack of reads ({} < {})".format(test.get_value(), options["average_coverage_fail"]))
-        elif test.get_value() < options["average_coverage_low"]:
-            test.set_status_and_reason("fail", "Not enough reads ({} < {})".format(test.get_value(), options["average_coverage_low"]))
-        elif test.get_value() < options["average_coverage_warn"]:
-            test.set_status_and_reason("fail", "Low reads ({} < {})".format(test.get_value(), options["average_coverage_warn"]))
-            test.set_effect("supplying lab")
+def genome_average_depth_ok(stamper, sample, component):
+    denovo_assembly = sample.get_category("denovo_assembly")
+    mapping_qc = sample.get_category("mapping_qc")
+    test = Test(name="genome_average_depth_ok", display_name="Atypical genome coverage", effect="supplying lab", status="undefined")
+    if denovo_assembly is None:
+        test["status"] = "fail"
+        test["reason"] = "denovo_assembly category not set"
+    elif mapping_qc is None:
+        test["status"] = "fail"
+        test["reason"] = "mapping_qc category not set"
+    else:
+        test['value'] = denovo_assembly['summary'].get('depth', 0)
+        if test['value'] < component['options']['average_coverage_fail']:
+            test["status"] = "fail"
+            test["reason"] = f"Lack of reads ({test['value']} < {component['options']['average_coverage_fail']})"
+            test["effect"] = "core_facility"
+        elif test['value'] < component['options']['average_coverage_low']:
+            test["status"] = "fail"
+            test["reason"] = f"Not enough reads ({test['value']} < {component['options']['average_coverage_low']})"
+            test["effect"] = "core_facility"
+        elif test['value'] < component['options']['average_coverage_warn']:
+            test["status"] = "fail"
+            test["reason"] = f"Low reads ({test['value']} < {component['options']['average_coverage_warn']})"
         else:
-            test.set_status_and_reason("pass", "")
-    except KeyError as e:
-        test.set_status_and_reason("fail", "Database KeyError {} in function {}: ".format(e.args[0], this_function_name))
-    finally:
-        summary[this_function_name] = test.as_dict()
-        return (summary, results)
+            test["status"] = "pass"
+    stamper["summary"]["tests"].append(test.json)
 
-
-def evaluate_tests_and_stamp(sampleComponentObj):
-    summary, results, file_path, key = sampleComponentObj.start_data_extraction()
-    species_detection = sampleComponentObj.get_sample_properties_by_category("species_detection")
-    sample_info = sampleComponentObj.get_sample_properties_by_category("sample_info")
+def evaluate_tests_and_stamp(stamper, sample):
     core_facility = False
     supplying_lab = False
-    for test in summary:
-        if summary[test]["status"] == "fail" or summary[test]["status"] == "undefined":
-            if summary[test]["effect"] == "supplying lab":
+    for test in stamper['summary']['tests']:
+        if test["status"] == "fail":
+            if test["effect"] == "supplying lab":
                 supplying_lab = True
-            elif summary[test]["effect"] == "core facility":
+            elif test["effect"] == "core facility":
                 core_facility = True
-    if (sample_info.get("provided_species", None) == species_detection["detected_species"] and
-        summary["test__denovo_assembly__genome_average_coverage"]["status"] == "fail" and \
-        summary["test__denovo_assembly__genome_average_coverage"]["effect"] == "supplying lab" and \
-        summary["test__denovo_assembly__genome_size_difference_1x_10x"]["status"] == "fail" and \
-        summary["test__sample__species_provided_is_detected"]["status"] == "pass" and \
-        summary["test__denovo_assembly__genome_size_at_1x"]["status"] == "pass"):
-            core_facility = True
+
+    #Custom check
+    checks = [False, False, False, False]
+    for test in stamper['summary']['tests']:
+        if test["name"] == 'genome_size_difference_x1_x10_ok' and test['status'] == 'pass':
+            checks[0] = True
+        if test["name"] == 'genome_average_depth_ok' and test['status'] == 'fail' and test['effect'] == "supplying lab":
+            checks[1] = True
+        if test["name"] == 'species_provided_is_detected' and test['status'] == 'pass':
+            checks[2] = True
+        if test["name"] == 'genome_size_at_x1_ok' and test['status'] == 'fail':
+            checks[3] = True
+    
+    species_detection = sample.get_category("species_detection")
+    if species_detection is not None:
+        if species_detection["summary"]["species"] == species_detection["summary"]["detected_species"]:
+            if all(checks) == True:
+                core_facility = True
+
     action = "OK"
     status = "pass"
     if supplying_lab:
@@ -233,44 +226,55 @@ def evaluate_tests_and_stamp(sampleComponentObj):
     if core_facility:
         status = "fail"
         action = "core facility"
-    summary["stamp"] = {
+    stamper["stamp"] = {
         "display_name": "ssi_stamper",
         "name": "ssi_stamper",
         "status": status,
         "value": action,
-        "date": datetime.datetime.utcnow(),
+        "date": common.date_now(),
         "reason": ""
     }
-    return (summary, results)
 
-
-def generate_report(sampleComponentObj):
-    summary, results, file_path, key = sampleComponentObj.start_data_extraction()
+def generate_report(stamper):
     data = []
-    for test in summary:
-        data.append({"test": "{}: {}:{}:{}".format(summary[test]["display_name"],
-                                                   summary[test]["status"],
-                                                   summary[test]["value"],
-                                                   summary[test]["reason"])})
-    return data
+    for test in stamper['summary']['tests']:
+        data.append({"test": f"{test.get('display_name','')}: {test.get('status','')}: {test.get('value','')}: {test.get('reason','')}"})
 
+    stamper['report']['columns']['items'] = {"id": "test", "name": "test"}
+    stamper['report']['data'] = data
 
-def datadump(sampleComponentObj, log):
-    sampleComponentObj.start_data_dump(log=log)
-    sampleComponentObj.run_data_dump_on_function(test__sample__has_reads_files, log=log)
-    sampleComponentObj.run_data_dump_on_function(test__size_check__has_min_reads, log=log)
-    sampleComponentObj.run_data_dump_on_function(test__species_detection__main_species_level, log=log)
-    sampleComponentObj.run_data_dump_on_function(test__species_detection__unclassified_level, log=log)
-    sampleComponentObj.run_data_dump_on_function(test__component__species_in_db, log=log)
-    sampleComponentObj.run_data_dump_on_function(test__sample__species_provided_is_detected, log=log)
-    sampleComponentObj.run_data_dump_on_function(test__denovo_assembly__genome_size_at_1x, log=log)
-    sampleComponentObj.run_data_dump_on_function(test__denovo_assembly__genome_size_at_10x, log=log)
-    sampleComponentObj.run_data_dump_on_function(test__denovo_assembly__genome_size_difference_1x_10x, log=log)
-    sampleComponentObj.run_data_dump_on_function(test__denovo_assembly__genome_average_coverage, log=log)
-    sampleComponentObj.run_data_dump_on_function(evaluate_tests_and_stamp, log=log)
-    sampleComponentObj.end_data_dump(generate_report_function=generate_report, log=log)
-
+def datadump(samplecomponent_ref_json: Dict):
+    samplecomponent_ref = SampleComponentReference(value=samplecomponent_ref_json)
+    samplecomponent = SampleComponent.load(samplecomponent_ref)
+    sample = Sample.load(samplecomponent.sample)
+    component = Component.load(samplecomponent.component)
+    stamper = samplecomponent.get_category("stamper")
+    if stamper is None:
+        stamper = Category(value={
+            "name": "stamper",
+            "component": {"id": samplecomponent["component"]["_id"], "name": samplecomponent["component"]["name"]},
+            "summary": { "tests": [] },
+            "report": { "columns": {}, "data": {}}
+        })
+    has_reads_files(stamper, sample)
+    has_min_reads(stamper, sample)
+    main_species_level_ok(stamper, sample, component)
+    unclassified_level_ok(stamper, sample, component)
+    species_in_db(stamper, sample, component)
+    species_provided_is_detected(stamper, sample)
+    genome_size_at_x1_ok(stamper, sample, component)
+    genome_size_at_x10_ok(stamper, sample, component)
+    genome_size_difference_x1_x10_ok(stamper, sample, component)
+    genome_average_depth_ok(stamper, sample, component)
+    evaluate_tests_and_stamp(stamper, sample)
+    generate_report(stamper)
+    samplecomponent.set_category(stamper)
+    sample.set_category(stamper)
+    samplecomponent.save_files()
+    common.set_status_and_save(sample, samplecomponent, "Success")
+    with open(os.path.join(samplecomponent["component"]["name"], "datadump_complete"), "w+") as fh:
+        fh.write("done")
 
 datadump(
-    snakemake.params.sampleComponentObj,
-    snakemake.log)
+    snakemake.params.samplecomponent_ref_json,
+)

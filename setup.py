@@ -2,23 +2,15 @@ from setuptools import setup, find_packages
 
 setup(
     name='bifrost_ssi_stamper',
-    version='temp',
+    version='v2_2_1',
+    description='Datahandling functions for bifrost (later to be API interface)',
     url='https://github.com/ssi-dk/bifrost_ssi_stamper',
-
-    # Author details
-    author='Kim Ng',
-    author_email='kimn@ssi.dk',
-
-    # Choose your license
-    license='MIT',
-
+    author="Kim Ng, Martin Basterrechea",
+    author_email="kimn@ssi.dk",
     packages=find_packages(),
-    python_requires='>=3.6',
-
-    package_data={'bifrost_ssi_stamper': ['config.yaml', 'pipeline.smk']},
-    include_package_data=True,
-
     install_requires=[
-        'bifrostlib==2.0.11'
-    ]
+        'bifrostlib >= 2.1.2',
+    ],
+    package_data={"bifrost_ssi_stamper": ['config.yaml']},
+    include_package_data=True
 )
