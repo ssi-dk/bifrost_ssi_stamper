@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2_2_2] - 2021-02-11
+### Notes
+Switched install pip for prod to -e
+
 ## [v2_2_1] - 2020-12-17
 ### Notes
 Removed requirements, I'll now iterate through the sample categories to check
