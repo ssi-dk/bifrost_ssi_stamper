@@ -63,7 +63,7 @@ ONBUILD RUN \
 # Additional resources
 #---------------------------------------------------------------------------------------------------
 FROM build_${BUILD_ENV}
-ONBUILD ARG BIFROST_COMPONENT_NAME
+ARG BIFROST_COMPONENT_NAME
 # NA
 
 #---------------------------------------------------------------------------------------------------
