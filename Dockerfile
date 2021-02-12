@@ -12,12 +12,12 @@ FROM continuumio/miniconda3:4.8.2 as build_base
 ONBUILD ARG BIFROST_COMPONENT_NAME
 ONBUILD ARG BUILD_ENV
 ONBUILD ARG MAINTAINER
-LABEL \
+ONBUILD LABEL \
     BIFROST_COMPONENT_NAME=${BIFROST_COMPONENT_NAME} \
     description="Docker environment for ${BIFROST_COMPONENT_NAME}" \
     environment="${BUILD_ENV}" \
     maintainer="${MAINTAINER}"
-RUN \
+ONBUILD RUN \
     conda install -yq -c conda-forge -c bioconda -c default snakemake-minimal==5.7.1;
 
 #---------------------------------------------------------------------------------------------------
