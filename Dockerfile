@@ -23,9 +23,8 @@ ONBUILD RUN \
 #---------------------------------------------------------------------------------------------------
 # Base for dev environement
 #---------------------------------------------------------------------------------------------------
-FROM continuumio/miniconda3:4.8.2 as build_dev
+FROM build_base as build_dev
 ONBUILD ARG BIFROST_COMPONENT_NAME
-ONBUILD COPY --from=build_base / /
 ONBUILD COPY /components/${BIFROST_COMPONENT_NAME} /bifrost/components/${BIFROST_COMPONENT_NAME}
 ONBUILD COPY /lib/bifrostlib /bifrost/lib/bifrostlib
 ONBUILD WORKDIR /bifrost/components/${BIFROST_COMPONENT_NAME}/
@@ -37,9 +36,8 @@ ONBUILD RUN \
 #---------------------------------------------------------------------------------------------------
 # Base for production environment
 #---------------------------------------------------------------------------------------------------
-FROM continuumio/miniconda3:4.8.2 as build_prod
+FROM build_base as build_prod
 ONBUILD ARG BIFROST_COMPONENT_NAME
-ONBUILD COPY --from=build_base / /
 ONBUILD WORKDIR /bifrost/components/${BIFROST_COMPONENT_NAME}
 ONBUILD COPY ./ ./
 ONBUILD RUN \
@@ -49,9 +47,8 @@ ONBUILD RUN \
 # Base for test environment (prod with tests)
 #---------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-FROM continuumio/miniconda3:4.8.2 as build_test
+FROM build_base as build_test
 ONBUILD ARG BIFROST_COMPONENT_NAME
-ONBUILD COPY --from=build_base / /
 ONBUILD WORKDIR /bifrost/components/${BIFROST_COMPONENT_NAME}
 ONBUILD COPY ./ ./
 ONBUILD RUN \
