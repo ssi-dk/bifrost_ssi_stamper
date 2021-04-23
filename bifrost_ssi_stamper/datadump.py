@@ -190,6 +190,68 @@ def genome_average_depth_ok(stamper, sample, component):
             test["status"] = "pass"
     stamper["summary"]["tests"].append(test.json)
 
+def qc_score(stamper, sample, component):
+    denovo_assembly = sample.get_category("denovo_assembly")
+    if denovo_assembly != None:
+        N50 = denovo_assembly.get('N50', None)
+        n_contigs = denovo_assembly.get('contigs', None)
+        depth = denovo_assembly.get('depth', None)
+    else:
+        N50 = None
+        n_contigs = None
+        depth = None
+    test = Test(name="qc_score", display_name="qc_score", effect="supplying lab", status="undefined")
+    QUAL_CAT = ["C", "B", "A"]
+    q = 0
+    assembly_vars_dict = {'N50':N50, 'n_contigs':n_contigs, 'depth':depth}
+    print(component['options']["qc_score_min_contigs"])
+    min_depth_b = component['options']['qc_score_min_depth_b']
+    min_depth_a = component['options']['qc_score_min_depth_a']
+    min_N50_b = component['options']['qc_score_min_N50_b']
+    min_N50_a = component['options']['qc_score_min_N50_a']
+    min_contigs = component['options']['qc_score_min_contigs']
+    if None in assembly_vars_dict.values():
+        qc_score = 'NA'
+    else:
+        b_reqs = {
+            '{} >= {}'.format(depth, min_depth_b):depth >= min_depth_b, 
+            '{} >= {}'.format(N50, min_N50_b):N50 >= min_N50_b,
+            '{} < {}'.format(n_contigs, min_contigs): n_contigs < min_contigs
+        }
+        a_reqs = {
+            '{} >= {}'.format(depth, min_depth_a):depth >= min_depth_a, 
+            '{} >= {}'.format(N50, min_N50_a):N50 >= min_N50_a,
+            '{} < {}'.format(n_contigs, min_contigs): n_contigs < min_contigs
+        }
+        if not all(b_reqs.values()):
+            reasons_not_b = [" : ".join(key, b_reqs[key]) for key in b_reqs.keys() if b_reqs[key]==False]
+        else:    
+            q = q + 1
+        if not all(a_reqs.values()):
+            reasons_not_a = [" : ".join(key, a_reqs[key]) for key in a_reqs.keys() if a_reqs[key]==False]
+        else:
+            q = q + 1
+        qc_score = QUAL_CAT[q]
+    if denovo_assembly is None:
+        test["status"] = "fail"
+        test["reason"] = "denovo_assembly category not set"
+    else:
+        test['value'] = qc_score
+        if test['value'] == 'NA':
+            test['status'] = 'fail'
+            test["reason"] = 'Missing value in {}'.format(assembly_vars_dict)
+        elif test['value'] == 'C':
+            test['status'] = 'pass'
+            test['reason'] = reasons_not_b
+        elif test['value'] == 'B':
+            test['status'] = 'pass'
+            test['reason'] = reasons_not_a
+        elif test['value'] == 'A':
+            test['status'] = 'pass'
+            test['reason'] = [" : ".join(key, a_reqs[key]) for key in a_reqs.keys()]
+    stamper["summary"]["tests"].append(test.json)    
+
+
 def evaluate_tests_and_stamp(stamper, sample):
     core_facility = False
     supplying_lab = False
@@ -266,6 +328,7 @@ def datadump(samplecomponent_ref_json: Dict):
     genome_size_at_x10_ok(stamper, sample, component)
     genome_size_difference_x1_x10_ok(stamper, sample, component)
     genome_average_depth_ok(stamper, sample, component)
+    qc_score(stamper, sample, component)
     evaluate_tests_and_stamp(stamper, sample)
     generate_report(stamper)
     samplecomponent.set_category(stamper)
