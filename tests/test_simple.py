@@ -35,6 +35,11 @@ class TestBifrostMinReadCheck:
                         "data": ["/bifrost/test_data/samples/S1_R1.fastq.gz",
                                  "/bifrost/test_data/samples/S1_R2.fastq.gz"]
                     }
+                },
+                'species_detection': {
+                    'summary': {
+                        'species': 'Staphylococcus aureus', "detected_species": "Staphylococcus aureus"
+                        }
                 }
             }
         }
