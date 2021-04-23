@@ -193,9 +193,9 @@ def genome_average_depth_ok(stamper, sample, component):
 def qc_score(stamper, sample, component):
     denovo_assembly = sample.get_category("denovo_assembly")
     if denovo_assembly != None:
-        N50 = denovo_assembly.get('N50', None)
-        n_contigs = denovo_assembly.get('contigs', None)
-        depth = denovo_assembly.get('depth', None)
+        N50 = denovo_assembly['summary'].get('N50', None)
+        n_contigs = denovo_assembly['summary'].get('contigs', None)
+        depth = denovo_assembly['summary'].get('depth', None)
     else:
         N50 = None
         n_contigs = None
@@ -224,11 +224,11 @@ def qc_score(stamper, sample, component):
             '{} < {}'.format(n_contigs, min_contigs): n_contigs < min_contigs
         }
         if not all(b_reqs.values()):
-            reasons_not_b = [" : ".join(key, b_reqs[key]) for key in b_reqs.keys() if b_reqs[key]==False]
+            reasons_not_b = ", ".join([":".join([key, str(b_reqs[key])]) for key in b_reqs.keys() if b_reqs[key]==False])
         else:    
             q = q + 1
         if not all(a_reqs.values()):
-            reasons_not_a = [" : ".join(key, a_reqs[key]) for key in a_reqs.keys() if a_reqs[key]==False]
+            reasons_not_a = ", ".join([":".join([key, str(a_reqs[key])]) for key in a_reqs.keys() if a_reqs[key]==False])
         else:
             q = q + 1
         qc_score = QUAL_CAT[q]
@@ -248,7 +248,7 @@ def qc_score(stamper, sample, component):
             test['reason'] = reasons_not_a
         elif test['value'] == 'A':
             test['status'] = 'pass'
-            test['reason'] = [" : ".join(key, a_reqs[key]) for key in a_reqs.keys()]
+            test['reason'] = ", ".join([":".join([key, str(a_reqs[key])]) for key in a_reqs.keys()])
     stamper["summary"]["tests"].append(test.json)    
 
 
