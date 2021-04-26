@@ -8,7 +8,7 @@ from bifrostlib.datahandling import Test
 from typing import Dict
 import os
 import datetime
-
+import re
 
 def has_reads_files(stamper, sample):
     paired_reads = sample.get_category("paired_reads")
@@ -193,9 +193,10 @@ def genome_average_depth_ok(stamper, sample, component):
 def qc_score(stamper, sample, component):
     denovo_assembly = sample.get_category("denovo_assembly")
     if denovo_assembly != None:
-        N50 = denovo_assembly['summary'].get('N50', None)
-        n_contigs = denovo_assembly['summary'].get('contigs', None)
-        depth = denovo_assembly['summary'].get('depth', None)
+        N50 = denovo_assembly['summary'].get('N50')
+        n_contigs = denovo_assembly['summary'].get('contigs_500') # we want only 500 np long contigs
+        depth = denovo_assembly['summary'].get('depth')
+        #length = denovo_assembly['summary'].get('length') # asm_size
     else:
         N50 = None
         n_contigs = None
@@ -214,21 +215,21 @@ def qc_score(stamper, sample, component):
         qc_score = 'NA'
     else:
         b_reqs = {
-            '{} >= {}'.format(depth, min_depth_b):depth >= min_depth_b, 
-            '{} >= {}'.format(N50, min_N50_b):N50 >= min_N50_b,
+            '{} >= {}'.format(depth, min_depth_b): depth >= min_depth_b, 
+            '{} >= {}'.format(N50, min_N50_b): N50 >= min_N50_b,
             '{} < {}'.format(n_contigs, min_contigs): n_contigs < min_contigs
         }
         a_reqs = {
-            '{} >= {}'.format(depth, min_depth_a):depth >= min_depth_a, 
-            '{} >= {}'.format(N50, min_N50_a):N50 >= min_N50_a,
+            '{} >= {}'.format(depth, min_depth_a): depth >= min_depth_a, 
+            '{} >= {}'.format(N50, min_N50_a): N50 >= min_N50_a,
             '{} < {}'.format(n_contigs, min_contigs): n_contigs < min_contigs
         }
         if not all(b_reqs.values()):
-            reasons_not_b = ", ".join([":".join([key, str(b_reqs[key])]) for key in b_reqs.keys() if b_reqs[key]==False])
+            reasons_not_b = ", ".join([": ".join([key, str(b_reqs[key])]) for key in b_reqs.keys() if b_reqs[key]==False])
         else:    
             q = q + 1
         if not all(a_reqs.values()):
-            reasons_not_a = ", ".join([":".join([key, str(a_reqs[key])]) for key in a_reqs.keys() if a_reqs[key]==False])
+            reasons_not_a = ", ".join([": ".join([key, str(a_reqs[key])]) for key in a_reqs.keys() if a_reqs[key]==False])
         else:
             q = q + 1
         qc_score = QUAL_CAT[q]
@@ -248,8 +249,25 @@ def qc_score(stamper, sample, component):
             test['reason'] = reasons_not_a
         elif test['value'] == 'A':
             test['status'] = 'pass'
-            test['reason'] = ", ".join([":".join([key, str(a_reqs[key])]) for key in a_reqs.keys()])
+            test['reason'] = ", ".join([": ".join([key, str(a_reqs[key])]) for key in a_reqs.keys()])
     stamper["summary"]["tests"].append(test.json)    
+
+def get_500bp_contigs(sample) -> None:
+    try:
+        component_names = [i['name'] for i in sample['components']]
+        for i in component_names:
+            assemb_match = re.match('assemblatron.*', i)
+            if assemb_match:
+                assemblatron_name = assemb_match.group()
+        if 
+    except KeyError:
+        return None
+    file_name = "contigs.sum.cov"
+    file_key = common.json_key_cleaner(file_name)
+    file_path = os.path.join(component_name, file_name)
+
+    yaml = common.get_yaml(file_path)
+    contig_summary_yaml = yaml["contig_depth"]
 
 
 def evaluate_tests_and_stamp(stamper, sample):
