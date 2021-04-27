@@ -215,14 +215,14 @@ def qc_score(stamper, sample, component):
         qc_score = 'NA'
     else:
         b_reqs = {
-            '{} >= {}'.format(depth, min_depth_b): depth >= min_depth_b, 
-            '{} >= {}'.format(N50, min_N50_b): N50 >= min_N50_b,
-            '{} < {}'.format(n_contigs, min_contigs): n_contigs < min_contigs
+            '{} >= {}'.format('depth={}'.format(depth), min_depth_b): depth >= min_depth_b, 
+            '{} >= {}'.format('N50={}'.format(N50), min_N50_b): N50 >= min_N50_b,
+            '{} < {}'.format('contigs500+={}'.format(n_contigs), min_contigs): n_contigs < min_contigs
         }
         a_reqs = {
-            '{} >= {}'.format(depth, min_depth_a): depth >= min_depth_a, 
-            '{} >= {}'.format(N50, min_N50_a): N50 >= min_N50_a,
-            '{} < {}'.format(n_contigs, min_contigs): n_contigs < min_contigs
+            '{} >= {}'.format('depth={}'.format(depth), min_depth_a): depth >= min_depth_a, 
+            '{} >= {}'.format('N50={}'.format(N50), min_N50_a): N50 >= min_N50_a,
+            '{} < {}'.format('contigs500+={}'.format(n_contigs), min_contigs): n_contigs < min_contigs
         }
         if not all(b_reqs.values()):
             reasons_not_b = ", ".join([": ".join([key, str(b_reqs[key])]) for key in b_reqs.keys() if b_reqs[key]==False])
@@ -249,7 +249,7 @@ def qc_score(stamper, sample, component):
             test['reason'] = reasons_not_a
         elif test['value'] == 'A':
             test['status'] = 'pass'
-            test['reason'] = ", ".join([": ".join([key, str(a_reqs[key])]) for key in a_reqs.keys()])
+            #test['reason'] = ", ".join([": ".join([key, str(a_reqs[key])]) for key in a_reqs.keys()])
     stamper["summary"]["tests"].append(test.json)    
 
 def get_500bp_contigs(sample) -> None: # unfinished, dont think we can actually see other output folders
