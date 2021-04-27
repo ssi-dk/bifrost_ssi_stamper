@@ -252,14 +252,13 @@ def qc_score(stamper, sample, component):
             test['reason'] = ", ".join([": ".join([key, str(a_reqs[key])]) for key in a_reqs.keys()])
     stamper["summary"]["tests"].append(test.json)    
 
-def get_500bp_contigs(sample) -> None:
+def get_500bp_contigs(sample) -> None: # unfinished, dont think we can actually see other output folders
     try:
         component_names = [i['name'] for i in sample['components']]
         for i in component_names:
             assemb_match = re.match('assemblatron.*', i)
             if assemb_match:
                 assemblatron_name = assemb_match.group()
-        if 
     except KeyError:
         return None
     file_name = "contigs.sum.cov"
