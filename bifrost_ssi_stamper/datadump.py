@@ -205,7 +205,7 @@ def qc_score(stamper, sample, component):
     QUAL_CAT = ["C", "B", "A"]
     q = 0
     assembly_vars_dict = {'N50':N50, 'n_contigs':n_contigs, 'depth':depth}
-    print(component['options']["qc_score_min_contigs"])
+    #print(component['options']["qc_score_min_contigs"])
     min_depth_b = component['options']['qc_score_min_depth_b']
     min_depth_a = component['options']['qc_score_min_depth_a']
     min_N50_b = component['options']['qc_score_min_N50_b']
