@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='bifrost_ssi_stamper',
-    version='v2_2_12',
+    version='v2.2.12',
     description='Datahandling functions for bifrost (later to be API interface)',
     url='https://github.com/ssi-dk/bifrost_ssi_stamper',
     author="Kim Ng, Martin Basterrechea",
