@@ -173,6 +173,7 @@ def genome_average_depth_ok(stamper, sample, component):
         test["reason"] = "contigs category not set"
     else:
         test['value'] = contigs['summary'].get('coverage_10x', 0)
+        print(test['value'])
         if test['value'] < component['options']['average_coverage_fail']:
             test["status"] = "fail"
             test["reason"] = f"Lack of reads ({test['value']} < {component['options']['average_coverage_fail']})"
