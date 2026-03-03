@@ -10,6 +10,8 @@ import os
 import datetime
 import re
 
+######## SEQ READ TEST FUNCTIONS ########
+
 def has_reads_files(stamper, sample):
     paired_reads = sample.get_category("paired_reads")
     test = Test(name="has_reads_files", display_name="No reads", effect="core facility", status="undefined")
@@ -34,6 +36,8 @@ def has_min_reads(stamper, sample):
         else:
             test["status"] = "pass"
     stamper["summary"]["tests"].append(test.json)
+
+######## SPECIES TEST FUNCTIONS ########
 
 def main_species_level_ok(stamper, sample, component):
     species_detection = sample.get_category("species_detection")
@@ -98,18 +102,20 @@ def species_provided_is_detected(stamper, sample):
             test["status"] = "pass"
     stamper["summary"]["tests"].append(test.json)
 
+######## ASSEMBLY SPECIFIC TEST ########
+
 def genome_size_at_x1_ok(stamper, sample, component):
-    denovo_assembly = sample.get_category("denovo_assembly")
+    contigs = sample.get_category("contigs")
     species_detection = sample.get_category("species_detection")
     test = Test(name="genome_size_at_x1_ok", display_name="Atypical genome size (x1)", effect="supplying lab", status="undefined")
-    if denovo_assembly is None:
+    if contigs is None:
         test["status"] = "fail"
-        test["reason"] = "denovo_assembly category not set"
+        test["reason"] = "contigs category not set"
     elif species_detection is None:
         test["status"] = "fail"
         test["reason"] = "species_detection category not set"
     else:
-        test["value"] = denovo_assembly["summary"].get('length', 0)
+        test["value"] = contigs["summary"].get('length_1x', 0)
         species = species_detection["summary"].get("species", None)
         if species not in component["options"]["species_qc_value_mapping"]:
             species = "default"
@@ -122,22 +128,22 @@ def genome_size_at_x1_ok(stamper, sample, component):
     stamper["summary"]["tests"].append(test.json)
 
 def genome_size_at_x10_ok(stamper, sample, component):
-    mapping_qc = sample.get_category("mapping_qc")
+    contigs = sample.get_category("contigs")
     species_detection = sample.get_category("species_detection")
     test = Test(name="genome_size_at_x10_ok", display_name="Atypical genome size (x10)", effect="supplying lab", status="undefined")
-    if mapping_qc is None:
+    if contigs is None:
         test["status"] = "fail"
-        test["reason"] = "mapping_qc category not set"
+        test["reason"] = "contigs category not set"
     elif species_detection is None:
         test["status"] = "fail"
         test["reason"] = "species_detection category not set"
     else:
-        test["value"] = mapping_qc["summary"].get('values_at_floor_of_depth', 0).get('x10', 0).get('length', 0)
+        test["value"] = contigs["summary"].get('length_10x', 0)
         species = species_detection["summary"].get("species", None)
         if species not in component["options"]["species_qc_value_mapping"]:
             species = "default"
         if (test['value'] > component["options"]["species_qc_value_mapping"][species]["min_length"] and
-                test['value'] < component["options"]["species_qc_value_mapping"][species]["max_length"]):
+            test['value'] < component["options"]["species_qc_value_mapping"][species]["max_length"]):
             test['status'] = "pass"
         else:
             test['status'] = 'fail'
@@ -145,17 +151,13 @@ def genome_size_at_x10_ok(stamper, sample, component):
     stamper["summary"]["tests"].append(test.json)
 
 def genome_size_difference_x1_x10_ok(stamper, sample, component):
-    denovo_assembly = sample.get_category("denovo_assembly")
-    mapping_qc = sample.get_category("mapping_qc")
+    contigs = sample.get_category("contigs")
     test = Test(name="genome_size_difference_x1_x10_ok", display_name="Atypical genome size (x1 - x10)", effect="supplying lab", status="undefined")
-    if denovo_assembly is None:
+    if contigs is None:
         test["status"] = "fail"
         test["reason"] = "denovo_assembly category not set"
-    elif mapping_qc is None:
-        test["status"] = "fail"
-        test["reason"] = "mapping_qc category not set"
     else:
-        test["value"] = denovo_assembly["summary"].get('length', 0) - mapping_qc["summary"].get('values_at_floor_of_depth', 0).get('x10', 0).get('length', 0)
+        test["value"] = contigs["summary"].get('length_1x', 0) - contigs["summary"].get('length_10x', 0)
         if test["value"] < component["options"]["max_size_difference_for_x1_and_x10"]:
             test["status"] = "pass"
         else:
@@ -164,17 +166,14 @@ def genome_size_difference_x1_x10_ok(stamper, sample, component):
     stamper["summary"]["tests"].append(test.json)
 
 def genome_average_depth_ok(stamper, sample, component):
-    denovo_assembly = sample.get_category("denovo_assembly")
-    mapping_qc = sample.get_category("mapping_qc")
+    contigs = sample.get_category("contigs")
     test = Test(name="genome_average_depth_ok", display_name="Atypical genome coverage", effect="supplying lab", status="undefined")
-    if denovo_assembly is None:
+    if contigs is None:
         test["status"] = "fail"
-        test["reason"] = "denovo_assembly category not set"
-    elif mapping_qc is None:
-        test["status"] = "fail"
-        test["reason"] = "mapping_qc category not set"
+        test["reason"] = "contigs category not set"
     else:
-        test['value'] = denovo_assembly['summary'].get('depth', 0)
+        test['value'] = contigs['summary'].get('coverage_10x', 0)
+        print(test['value'])
         if test['value'] < component['options']['average_coverage_fail']:
             test["status"] = "fail"
             test["reason"] = f"Lack of reads ({test['value']} < {component['options']['average_coverage_fail']})"
@@ -191,11 +190,11 @@ def genome_average_depth_ok(stamper, sample, component):
     stamper["summary"]["tests"].append(test.json)
 
 def qc_score(stamper, sample, component):
-    denovo_assembly = sample.get_category("denovo_assembly")
-    if denovo_assembly != None:
-        N50 = denovo_assembly['summary'].get('N50')
-        n_contigs = denovo_assembly['summary'].get('contigs_500') # we want only 500 np long contigs
-        depth = denovo_assembly['summary'].get('depth')
+    contigs = sample.get_category("contigs")
+    if contigs != None:
+        N50 = contigs['summary'].get('N50_10x')
+        n_contigs = contigs['summary'].get('contigs_10x') # we want only 500 np long contigs
+        depth = contigs['summary'].get('coverage_10x')
         #length = denovo_assembly['summary'].get('length') # asm_size
     else:
         N50 = None
@@ -233,7 +232,7 @@ def qc_score(stamper, sample, component):
         else:
             q = q + 1
         qc_score = QUAL_CAT[q]
-    if denovo_assembly is None:
+    if contigs is None:
         test["status"] = "fail"
         test["reason"] = "denovo_assembly category not set"
     else:
@@ -251,23 +250,6 @@ def qc_score(stamper, sample, component):
             test['status'] = 'pass'
             #test['reason'] = ", ".join([": ".join([key, str(a_reqs[key])]) for key in a_reqs.keys()])
     stamper["summary"]["tests"].append(test.json)    
-
-def get_500bp_contigs(sample) -> None: # unfinished, dont think we can actually see other output folders
-    try:
-        component_names = [i['name'] for i in sample['components']]
-        for i in component_names:
-            assemb_match = re.match('assemblatron.*', i)
-            if assemb_match:
-                assemblatron_name = assemb_match.group()
-    except KeyError:
-        return None
-    file_name = "contigs.sum.cov"
-    file_key = common.json_key_cleaner(file_name)
-    file_path = os.path.join(component_name, file_name)
-
-    yaml = common.get_yaml(file_path)
-    contig_summary_yaml = yaml["contig_depth"]
-
 
 def evaluate_tests_and_stamp(stamper, sample):
     core_facility = False
