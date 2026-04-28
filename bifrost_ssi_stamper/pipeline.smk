@@ -43,6 +43,10 @@ except Exception:
     print(traceback.format_exc(), file=sys.stderr)
     raise Exception("failed to set sample, component and/or samplecomponent")
 
+if not samplecomponent.has_requirements():
+   common.set_status_and_save(sample, samplecomponent, "Requirements not met")
+   raise SystemExit("Requirements not met")
+
 onerror:
     if not samplecomponent.has_requirements():
         common.set_status_and_save(sample, samplecomponent, "Requirements not met")
@@ -77,22 +81,6 @@ rule setup:
         samplecomponent["path"] = os.path.join(os.getcwd(), component["name"])
         samplecomponent.save()
 
-rule check_requirements:
-    message:
-        "Running step: check_requirements"
-    log:
-        out_file = f"{component['name']}/log/check_requirements.out.log",
-        err_file = f"{component['name']}/log/check_requirements.err.log",
-    benchmark:
-        f"{component['name']}/benchmarks/check_requirements.benchmark"
-    input:
-        folder = rules.setup.output.init_file
-    output:
-        check_file = touch(f"{component['name']}/requirements_met")
-    run:
-        if samplecomponent.has_requirements():
-            pass
-
 # -------------------------------------------------------------------------
 # MAIN WORK (ssi_stamper only runs datadump)
 # -------------------------------------------------------------------------
@@ -105,8 +93,6 @@ rule datadump:
         err_file = f"{component['name']}/log/datadump.err.log",
     benchmark:
         f"{component['name']}/benchmarks/datadump.benchmark"
-    input:
-        rules.check_requirements.output.check_file
     output:
         complete = f"{component['name']}/datadump_complete"
     params:
