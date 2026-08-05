@@ -124,7 +124,7 @@ def genome_size_at_x1_ok(stamper, sample, component):
             test['status'] = "pass"
         else:
             test['status'] = 'fail'
-            test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['min_length']})"
+            test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['max_length']})"
     stamper["summary"]["tests"].append(test.json)
 
 def genome_size_at_x10_ok(stamper, sample, component):
