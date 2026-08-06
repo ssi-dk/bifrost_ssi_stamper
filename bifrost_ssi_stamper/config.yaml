@@ -107,35 +107,44 @@ requirements:
 db_values_changes:
   files: []
   sample:
-    properties:
+    categories:
       stamper: 
         summary:  # see sample_component summary
         component:
           _id: 
-          date: "ObjectId"
-    report:
-      stamper:
-        title: "SSI QC Stamp"
-        info: *name
-        columns:
-          - {id: "test", name: "test"}
-        data: []
+          name:
+      assembly_check:
+        component:
+          _id: 
+          name: 
+        summary:
+        report:
   sample_component:
-    summary:
-      stamp:
-        name:
-        value:
-        date:
-      test__sample__has_reads_files:
-      test__species_detection__main_species_level:
-      test__species_detection__unclassified_level:
-      test__componenent__species_in_db:
-      test__sample__species_provided_is_detected:
-      test__denovo_assembly__genome_size_at_1x:
-      test__denovo_assembly__genome_size_at_10x:
-      test__denovo_assembly__genome_size_difference_1x_10x:
-      test__denovo_assembly__genome_average_coverage:
-      test__denovo_assembly__minimum_read_number:
+    Category:
+      stamper:
+        summary:
+          tests:
+            test__has_reads_files:
+            test__has_min_reads:
+            test__main_species_level_ok:
+            test__unclassified_level_ok:
+            test__componenent__species_in_db:
+            test__species_provided_is_detected:
+            test__genome_size_at_x1_ok:
+            test__genome_size_at_x10_ok:
+            test__genome_size_at_x10_sufficient:
+            test__genome_size_difference_x1_x10_ok:
+            test__genome_average_depth_ok:
+            test__qc_score:
+        report:
+        stamp:
+          name:
+          status:
+          value:
+          date:
+          reason:
+      assembly_check:
+        summary:
+          sufficient_assembly:
     results:
 #---------------------------------------------------------------------------------------------------
-
