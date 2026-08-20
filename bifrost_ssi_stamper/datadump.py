@@ -124,7 +124,7 @@ def genome_size_at_x1_ok(stamper, sample, component):
             test['status'] = "pass"
         else:
             test['status'] = 'fail'
-            test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['min_length']})"
+            test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['max_length']})"
     stamper["summary"]["tests"].append(test.json)
 
 def genome_size_at_x10_ok(stamper, sample, component):
@@ -147,8 +147,41 @@ def genome_size_at_x10_ok(stamper, sample, component):
             test['status'] = "pass"
         else:
             test['status'] = 'fail'
-            test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['min_length']})"
+            test['reason'] = f"Value ({test['value']}) below or above expected ({component['options']['species_qc_value_mapping'][species]['min_length']}, {component['options']['species_qc_value_mapping'][species]['max_length']})"
     stamper["summary"]["tests"].append(test.json)
+
+def genome_size_at_x10_sufficient(stamper, sample, component, samplecomponent):
+    contigs = sample.get_category("contigs")
+    species_detection = sample.get_category("species_detection")
+    test = Test(name="genome_size_at_x10_sufficient", display_name="Genome size (x10) sufficient", effect="supplying lab", status="undefined")
+    if contigs is None:
+        test["status"] = "fail"
+        test["reason"] = "contigs category not set"
+    elif species_detection is None:
+        test["status"] = "fail"
+        test["reason"] = "species_detection category not set"
+    else:
+        test["value"] = contigs["summary"].get('length_10x', 0)
+        species = species_detection["summary"].get("species", None)
+        if species not in component["options"]["species_qc_value_mapping"]:
+            species = "default"
+        if (test['value'] > component["options"]["species_qc_value_mapping"][species]["min_length"]//2):
+            test['status'] = "pass"
+        else:
+            test['status'] = 'fail'
+            test['reason'] = f"Value ({test['value']}) below sufficient ({component['options']['species_qc_value_mapping'][species]['min_length']//2})"
+    stamper["summary"]["tests"].append(test.json)
+    assembly_check = sample.get_category("assembly_check")
+    if assembly_check is None:
+        assembly_check = Category(value={
+            "name": "assembly_check",
+            "component": {"id": component["_id"], "name": component["name"]},
+            "summary": {},
+            "report": {}
+        })
+    assembly_check["summary"]['sufficient_assembly'] = test['status']
+    sample.set_category(assembly_check)
+    samplecomponent.set_category(assembly_check)
 
 def genome_size_difference_x1_x10_ok(stamper, sample, component):
     contigs = sample.get_category("contigs")
@@ -319,6 +352,7 @@ def datadump(samplecomponent_ref_json: Dict):
         })
     has_reads_files(stamper, sample)
     has_min_reads(stamper, sample)
+    genome_size_at_x10_sufficient(stamper, sample, component, samplecomponent)
     main_species_level_ok(stamper, sample, component)
     unclassified_level_ok(stamper, sample, component)
     species_in_db(stamper, sample, component)
